@@ -9,7 +9,6 @@ async function getAppUsername(req: NextRequest): Promise<string> {
   try {
     const token = req.cookies.get(COOKIE_NAME)?.value;
     if (!token) return 'system';
-
     const payload = await verifyToken(token);
     return payload?.username || 'system';
   } catch {
@@ -24,12 +23,13 @@ export async function GET(req: NextRequest) {
   const agentType = searchParams.get('agent_type');
 
   const isHistory = searchParams.get('history') === 'true';
+  const isPeriods = searchParams.get('periods') === 'true';
   const productId = searchParams.get('product_id');
 
   try {
     const client = await pool.connect();
     try {
-      // ── SUB-FITUR: Riwayat Perubahan Harga (Berbasis area_id) ─────────────────
+      // ── SUB-FITUR: Riwayat Perubahan Harga ───────────────────────────────────
       if (isHistory) {
         if (!productId || !areaId) {
           return NextResponse.json(
@@ -37,9 +37,8 @@ export async function GET(req: NextRequest) {
             { status: 400 }
           );
         }
-
         const historyRes = await client.query(`
-          SELECT 
+          SELECT
             history_id, product_price_id, product_id, area_id,
             dbp, wbp, rbp, cbp, pita_cukai, hje, tarif, hpp,
             action, changed_at, changed_by
@@ -49,6 +48,27 @@ export async function GET(req: NextRequest) {
         `, [Number(productId), Number(areaId)]);
 
         return NextResponse.json({ success: true, data: historyRes.rows });
+      }
+
+      // ── SUB-FITUR: Daftar Periode Harga per Produk+Area ───────────────────────
+      if (isPeriods) {
+        if (!productId || !areaId) {
+          return NextResponse.json(
+            { success: false, error: 'product_id dan area_id wajib disertakan untuk melihat periode' },
+            { status: 400 }
+          );
+        }
+        const periodsRes = await client.query(`
+          SELECT
+            period_id, product_price_id, product_id, area_id,
+            TO_CHAR(valid_from, 'YYYY-MM-DD') AS valid_from, dbp, wbp, rbp, cbp, pita_cukai, hje, tarif, hpp,
+            status, created_at, created_by
+          FROM product_price_periods
+          WHERE product_id = $1 AND area_id = $2
+          ORDER BY valid_from DESC
+        `, [Number(productId), Number(areaId)]);
+
+        return NextResponse.json({ success: true, data: periodsRes.rows });
       }
 
       // ── 1. Mengambil Master Area (Untuk Dropdown Selector) ───────────────────
@@ -66,7 +86,7 @@ export async function GET(req: NextRequest) {
         ORDER  BY name
       `);
 
-      // ── 3. Ambil Utama Data Harga Berbasis area_id Relasional ──────────────────
+      // ── 3. Ambil Utama Data Harga — tambah kolom scheduled period count ──────
       const conditions: string[] = [];
       const values: unknown[]    = [];
       let   idx = 1;
@@ -92,7 +112,25 @@ export async function GET(req: NextRequest) {
           COALESCE(ao.regional, '') AS regional,
           pp.dbp, pp.wbp, pp.rbp, pp.cbp,
           pp.pita_cukai, pp.hje, pp.tarif, pp.hpp,
-          pp.updated_at
+          pp.updated_at,
+          -- Jumlah periode terjadwal (valid_from > CURRENT_DATE) untuk baris ini
+          (
+            SELECT COUNT(*)
+            FROM product_price_periods ppp
+            WHERE ppp.product_id = pp.product_id
+              AND ppp.area_id    = pp.area_id
+              AND ppp.valid_from > CURRENT_DATE
+          )::int AS scheduled_count,
+          -- valid_from periode aktif terkini (valid_from <= hari ini, terbaru)
+          (
+            SELECT TO_CHAR(valid_from, 'YYYY-MM-DD')
+            FROM product_price_periods ppp
+            WHERE ppp.product_id = pp.product_id
+              AND ppp.area_id    = pp.area_id
+              AND ppp.valid_from <= CURRENT_DATE
+            ORDER BY valid_from DESC
+            LIMIT 1
+          ) AS active_period_from
         FROM   product_prices pp
         JOIN   products        p  ON p.id = pp.product_id
         JOIN   area_overrides  ao ON ao.area_id = pp.area_id
@@ -136,50 +174,151 @@ export async function POST(req: NextRequest) {
     const client = await pool.connect();
 
     try {
-      // Aksi Tunggal / Multi Area Tambah Harga
+      // ── Tambah / Edit Harga (dengan optional periode) ─────────────────────────
       if (action === 'upsert') {
-        const { product_id, area_id, dbp, wbp, rbp, cbp, pita_cukai, hje, tarif, hpp } = price;
+        const {
+          product_id, area_id,
+          dbp, wbp, rbp, cbp, pita_cukai, hje, tarif, hpp,
+          valid_from,   // string ISO date atau null
+        } = price;
 
         if (!product_id || !area_id) {
-          return NextResponse.json({ success: false, error: 'product_id dan area_id wajib diisi' }, { status: 400 });
+          return NextResponse.json(
+            { success: false, error: 'product_id dan area_id wajib diisi' },
+            { status: 400 }
+          );
         }
 
         const targetAreaIds: number[] = Array.isArray(area_id)
           ? area_id.map(Number)
           : [Number(area_id)];
 
+        // Apakah valid_from sudah berlaku (atau tidak diisi → berlaku sekarang)
+        // Bandingkan sebagai string ISO date (YYYY-MM-DD) agar bebas timezone.
+        // new Date("2026-06-04") di-parse sebagai UTC midnight yang berbeda dengan
+        // local midnight di UTC+7, sehingga perbandingan Date object tidak aman.
+        const todayStr = new Date().toLocaleDateString('en-CA'); // "YYYY-MM-DD" lokal
+        const fromStr  = valid_from ? String(valid_from).slice(0, 10) : todayStr;
+        const isImmediate = fromStr <= todayStr; // true → update product_prices juga
+
         await client.query('BEGIN');
-        const insertedRows = [];
+        const insertedRows: any[] = [];
 
         for (const singleAreaId of targetAreaIds) {
-          const res = await client.query(`
-            INSERT INTO product_prices (product_id, area_id, dbp, wbp, rbp, cbp, pita_cukai, hje, tarif, hpp, updated_by)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-            ON CONFLICT (product_id, area_id) DO UPDATE SET
-              dbp        = EXCLUDED.dbp,
-              wbp        = EXCLUDED.wbp,
-              rbp        = EXCLUDED.rbp,
-              cbp        = EXCLUDED.cbp,
-              pita_cukai = EXCLUDED.pita_cukai,
-              hje        = EXCLUDED.hje,
-              tarif      = EXCLUDED.tarif,
-              hpp        = EXCLUDED.hpp,
-              updated_by = EXCLUDED.updated_by,
-              updated_at = CURRENT_TIMESTAMP
-            RETURNING *
-          `, [
-            Number(product_id), singleAreaId,
-            dbp ?? 0, wbp ?? 0, rbp ?? 0, cbp ?? 0, pita_cukai ?? 0, hje ?? 0, tarif ?? 0, hpp ?? 0,
-            usernameApp
-          ]);
-          insertedRows.push(res.rows[0]);
+          // 1. Jika berlaku sekarang → upsert product_prices
+          if (isImmediate) {
+            const res = await client.query(`
+              INSERT INTO product_prices
+                (product_id, area_id, dbp, wbp, rbp, cbp, pita_cukai, hje, tarif, hpp, updated_by)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+              ON CONFLICT (product_id, area_id) DO UPDATE SET
+                dbp        = EXCLUDED.dbp,
+                wbp        = EXCLUDED.wbp,
+                rbp        = EXCLUDED.rbp,
+                cbp        = EXCLUDED.cbp,
+                pita_cukai = EXCLUDED.pita_cukai,
+                hje        = EXCLUDED.hje,
+                tarif      = EXCLUDED.tarif,
+                hpp        = EXCLUDED.hpp,
+                updated_by = EXCLUDED.updated_by,
+                updated_at = CURRENT_TIMESTAMP
+              RETURNING *
+            `, [
+              Number(product_id), singleAreaId,
+              dbp ?? 0, wbp ?? 0, rbp ?? 0, cbp ?? 0,
+              pita_cukai ?? 0, hje ?? 0, tarif ?? 0, hpp ?? 0,
+              usernameApp,
+            ]);
+            insertedRows.push(res.rows[0]);
+          }
+
+          // 2. Jika ada valid_from → simpan ke product_price_periods
+          if (valid_from) {
+            // Ambil product_price_id (buat dulu jika belum ada — kasus scheduled penuh)
+            let ppId: number | null = null;
+
+            if (isImmediate) {
+              // product_prices sudah di-upsert di atas, ambil id-nya
+              const ppRes = await client.query(
+                'SELECT id FROM product_prices WHERE product_id=$1 AND area_id=$2',
+                [Number(product_id), singleAreaId]
+              );
+              ppId = ppRes.rows[0]?.id ?? null;
+            } else {
+              // Harga terjadwal: pastikan product_prices sudah ada (bisa saja belum ada sama sekali)
+              // Kita lakukan INSERT tanpa ON CONFLICT UPDATE agar tidak mengubah harga aktif
+              const existRes = await client.query(
+                'SELECT id FROM product_prices WHERE product_id=$1 AND area_id=$2',
+                [Number(product_id), singleAreaId]
+              );
+              if (existRes.rows.length > 0) {
+                ppId = existRes.rows[0].id;
+              } else {
+                // Belum ada sama sekali → buat placeholder dengan nilai 0
+                const insertRes = await client.query(`
+                  INSERT INTO product_prices
+                    (product_id, area_id, dbp, wbp, rbp, cbp, pita_cukai, hje, tarif, hpp, updated_by)
+                  VALUES ($1, $2, 0,0,0,0,0,0,0,0,$3)
+                  RETURNING id
+                `, [Number(product_id), singleAreaId, usernameApp]);
+                ppId = insertRes.rows[0].id;
+                insertedRows.push({ id: ppId, scheduled: true });
+              }
+            }
+
+            if (ppId !== null) {
+              // Tandai semua periode lama (> valid_from) sebagai 'superseded' jika ada yg lebih lama
+              // Sederhananya: insert/update periode ini
+              const periodStatus = isImmediate ? 'active' : 'scheduled';
+
+              await client.query(`
+                INSERT INTO product_price_periods
+                  (product_price_id, product_id, area_id, valid_from,
+                   dbp, wbp, rbp, cbp, pita_cukai, hje, tarif, hpp,
+                   status, created_by)
+                VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+                ON CONFLICT (product_id, area_id, valid_from) DO UPDATE SET
+                  dbp        = EXCLUDED.dbp,
+                  wbp        = EXCLUDED.wbp,
+                  rbp        = EXCLUDED.rbp,
+                  cbp        = EXCLUDED.cbp,
+                  pita_cukai = EXCLUDED.pita_cukai,
+                  hje        = EXCLUDED.hje,
+                  tarif      = EXCLUDED.tarif,
+                  hpp        = EXCLUDED.hpp,
+                  status     = EXCLUDED.status,
+                  created_by = EXCLUDED.created_by
+              `, [
+                ppId, Number(product_id), singleAreaId, valid_from,
+                dbp ?? 0, wbp ?? 0, rbp ?? 0, cbp ?? 0,
+                pita_cukai ?? 0, hje ?? 0, tarif ?? 0, hpp ?? 0,
+                periodStatus, usernameApp,
+              ]);
+
+              // Jika periode ini aktif (isImmediate), supersede semua periode lama yg lebih tua
+              if (isImmediate) {
+                await client.query(`
+                  UPDATE product_price_periods
+                  SET    status = 'superseded'
+                  WHERE  product_id  = $1
+                    AND  area_id     = $2
+                    AND  valid_from  < $3
+                    AND  status      = 'active'
+                `, [Number(product_id), singleAreaId, valid_from]);
+              }
+            }
+          }
         }
 
         await client.query('COMMIT');
-        return NextResponse.json({ success: true, data: insertedRows[insertedRows.length - 1] });
+        return NextResponse.json({
+          success: true,
+          data: insertedRows[insertedRows.length - 1] ?? null,
+          scheduled: !isImmediate,
+        });
       }
 
-      // Aksi Bulk Upload Excel Upsert
+      // ── Bulk Upload Excel ────────────────────────────────────────────────────
       if (action === 'bulk_upsert') {
         if (!Array.isArray(prices) || prices.length === 0) {
           return NextResponse.json({ success: false, error: 'Array prices kosong' }, { status: 400 });
@@ -188,19 +327,25 @@ export async function POST(req: NextRequest) {
         let count = 0;
         for (const p of prices) {
           await client.query(`
-            INSERT INTO product_prices (product_id, area_id, dbp, wbp, rbp, cbp, pita_cukai, hje, tarif, hpp, updated_by)
+            INSERT INTO product_prices
+              (product_id, area_id, dbp, wbp, rbp, cbp, pita_cukai, hje, tarif, hpp, updated_by)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             ON CONFLICT (product_id, area_id) DO UPDATE SET
               dbp=$3, wbp=$4, rbp=$5, cbp=$6, pita_cukai=$7, hje=$8, tarif=$9, hpp=$10,
               updated_by=$11, updated_at=CURRENT_TIMESTAMP
-          `, [p.product_id, p.area_id, p.dbp??0, p.wbp??0, p.rbp??0, p.cbp??0, p.pita_cukai??0, p.hje??0, p.tarif??0, p.hpp??0, usernameApp]);
+          `, [
+            p.product_id, p.area_id,
+            p.dbp ?? 0, p.wbp ?? 0, p.rbp ?? 0, p.cbp ?? 0,
+            p.pita_cukai ?? 0, p.hje ?? 0, p.tarif ?? 0, p.hpp ?? 0,
+            usernameApp,
+          ]);
           count++;
         }
         await client.query('COMMIT');
         return NextResponse.json({ success: true, data: { upserted: count } });
       }
 
-      // Aksi Hapus Harga
+      // ── Hapus Harga ──────────────────────────────────────────────────────────
       if (action === 'delete') {
         const { id } = price;
         if (!id) return NextResponse.json({ success: false, error: 'id wajib diisi' }, { status: 400 });
@@ -213,7 +358,18 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true });
       }
 
-      return NextResponse.json({ success: false, error: `Action tidak dikenal: ${action}` }, { status: 400 });
+      // ── Hapus Satu Periode ───────────────────────────────────────────────────
+      if (action === 'delete_period') {
+        const { period_id } = price;
+        if (!period_id) return NextResponse.json({ success: false, error: 'period_id wajib diisi' }, { status: 400 });
+        await client.query('DELETE FROM product_price_periods WHERE period_id = $1', [period_id]);
+        return NextResponse.json({ success: true });
+      }
+
+      return NextResponse.json(
+        { success: false, error: `Action tidak dikenal: ${action}` },
+        { status: 400 }
+      );
     } catch (err) {
       await client.query('ROLLBACK').catch(() => {});
       throw err;

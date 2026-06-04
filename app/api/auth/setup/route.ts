@@ -62,7 +62,7 @@ export async function POST() {
     const password_hash = await hash('RootPass123!', 12);
 
     // List semua area default untuk diberikan ke root
-    const all_areas = ['banyuwangi', 'jember', 'surabaya', 'malang', 'pasuruan'];
+    const all_areas = [''];
 
     // 7. Insert/Update user root dengan allowed_areas penuh
     await db.query(
