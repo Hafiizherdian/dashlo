@@ -29,7 +29,7 @@ jobs:
             echo "=== Pull kode terbaru ==="
             git pull origin master
 
-            echo "=== Install dependencies ==="
+            echo "=== Install dependencies ===="
             npm ci 
 
             echo "=== Build Next.js ==="
