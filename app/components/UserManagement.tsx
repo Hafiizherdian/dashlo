@@ -953,7 +953,7 @@ export default function UserManagement({ theme }: { theme: Theme }) {
                   {/* User */}
                   <td style={{ padding: '10px 14px', background: rowBg }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-                      <div style={{ width: 30, height: 30, borderRadius: 7, background: c.bg, border: `1px solid ${c.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 7, background: c.bg,color: c.tx, border: `1px solid ${c.bd}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <RoleIcon role={user.role} size={13}/>
                       </div>
                       <div>

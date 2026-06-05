@@ -178,12 +178,44 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   );
 
   if (!can('access_admin_panel')) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#080b12', color: '#fff', flexDirection: 'column', gap: 16 }}>
-      <ShieldAlert size={48} color="#ef4444" />
-      <span style={{ fontSize: 16, fontWeight: 600 }}>Akses Ditolak</span>
-      <span style={{ fontSize: 14, opacity: 0.7 }}>Anda tidak memiliki akses ke panel admin.</span>
+  <div style={{ minHeight: '100vh', background: '#070e07', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', fontFamily: FONT_MONO }}>
+    <style>{`
+      @keyframes sgFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    `}</style>
+    <div style={{ animation: 'sgFadeUp 0.5s ease both', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+      
+      {/* Icon */}
+      <div style={{ width: 64, height: 64, borderRadius: 16, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <ShieldAlert size={28} color="#f87171" />
+      </div>
+
+      {/* Text */}
+      <div style={{ textAlign: 'center', animation: 'sgFadeUp 0.5s 0.1s ease both', opacity: 0 }}>
+        <div style={{ fontSize: 20, fontWeight: 800, color: 'rgba(255,255,255,0.9)', letterSpacing: '-0.03em', lineHeight: 1 }}>Akses Ditolak</div>
+        <div style={{ fontSize: 11, color: '#f87171', letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 6 }}>Unauthorized Access</div>
+      </div>
+
+      {/* Desc */}
+      <div style={{ animation: 'sgFadeUp 0.5s 0.2s ease both', opacity: 0, fontSize: 12, color: 'rgba(255,255,255,0.38)', textAlign: 'center', maxWidth: 260, lineHeight: 1.6 }}>
+        Anda tidak memiliki akses ke panel admin. Hubungi Pak Nanang untuk informasi lebih lanjut.
+      </div>
+
+      {/* Divider */}
+      <div style={{ animation: 'sgFadeUp 0.5s 0.3s ease both', opacity: 0, width: 160, height: 1, background: 'rgba(239,68,68,0.15)' }} />
+
+      {/* Back button */}
+      <div style={{ animation: 'sgFadeUp 0.5s 0.35s ease both', opacity: 0 }}>
+        <button
+          onClick={() => window.location.href = '/'}
+          style={{ padding: '8px 20px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 8, color: '#f87171', fontSize: 11, fontWeight: 600, fontFamily: FONT_MONO, cursor: 'pointer', letterSpacing: '0.06em' }}
+        >
+          Kembali ke Dashboard
+        </button>
+      </div>
+
     </div>
-  );
+  </div>
+);
 
   return <>{children}</>;
 }
