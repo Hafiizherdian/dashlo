@@ -16,6 +16,67 @@ async function getAppUsername(req: NextRequest): Promise<string> {
   }
 }
 
+// ── Apply Periode Terjadwal yang Sudah Jatuh Tempo ──────────────────────────
+// Dipanggil setiap kali GET dieksekusi. Mengecek apakah ada periode 'scheduled'
+// yang valid_from-nya <= hari ini, lalu mengeksekusi update ke product_prices.
+async function applyDueScheduledPeriods(client: any): Promise<void> {
+  // Gunakan toLocaleDateString('en-CA') agar format YYYY-MM-DD sesuai timezone lokal
+  // (menghindari masalah UTC shift dari new Date().toISOString())
+  const todayStr = new Date().toLocaleDateString('en-CA');
+
+  const dueRes = await client.query(`
+    SELECT *
+    FROM product_price_periods
+    WHERE status    = 'scheduled'
+      AND valid_from <= $1
+    ORDER BY valid_from ASC
+  `, [todayStr]);
+
+  if (dueRes.rows.length === 0) return;
+
+  for (const p of dueRes.rows) {
+    // 1. Update product_prices dengan harga dari periode ini
+    await client.query(`
+      UPDATE product_prices
+      SET dbp        = $1,
+          wbp        = $2,
+          rbp        = $3,
+          cbp        = $4,
+          pita_cukai = $5,
+          hje        = $6,
+          tarif      = $7,
+          hpp        = $8,
+          updated_at = CURRENT_TIMESTAMP,
+          updated_by = $9
+      WHERE product_id = $10
+        AND area_id    = $11
+    `, [
+      p.dbp, p.wbp, p.rbp, p.cbp,
+      p.pita_cukai, p.hje, p.tarif, p.hpp,
+      p.created_by,
+      p.product_id, p.area_id,
+    ]);
+
+    // 2. Tandai periode ini sebagai active
+    await client.query(`
+      UPDATE product_price_periods
+      SET status = 'active'
+      WHERE period_id = $1
+    `, [p.period_id]);
+
+    // 3. Supersede semua periode 'active' lama yang valid_from-nya lebih tua
+    await client.query(`
+      UPDATE product_price_periods
+      SET status = 'superseded'
+      WHERE product_id  = $1
+        AND area_id     = $2
+        AND valid_from  < $3
+        AND status      = 'active'
+        AND period_id  != $4
+    `, [p.product_id, p.area_id, p.valid_from, p.period_id]);
+  }
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const areaId    = searchParams.get('area_id');
@@ -29,6 +90,12 @@ export async function GET(req: NextRequest) {
   try {
     const client = await pool.connect();
     try {
+      // ── Jalankan scheduler setiap kali GET dipanggil ─────────────────────────
+      // (Hanya berjalan jika ada periode scheduled yang jatuh tempo — efisien)
+      await client.query('BEGIN');
+      await applyDueScheduledPeriods(client);
+      await client.query('COMMIT');
+
       // ── SUB-FITUR: Riwayat Perubahan Harga ───────────────────────────────────
       if (isHistory) {
         if (!productId || !areaId) {
