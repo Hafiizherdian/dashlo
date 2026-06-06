@@ -7,53 +7,55 @@ import {
   Sun, Moon, ChevronLeft, LogOut,
   ShieldAlert, ShieldCheck, Shield,
 } from 'lucide-react';
+import { tk } from '@/lib/theme';
+import Actual from '@/app/components/actual'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Theme    = 'light' | 'dark';
 type UserRole = 'root' | 'admin' | 'user';
-type TabId    = 'Menu1' | 'Menu2' | 'Menu3' | 'Menu4';
+type TabId    = 'Actual' | 'Menu2' | 'Menu3' | 'Menu4';
 
 // ─── Tabs config — tambah / ubah di sini ─────────────────────────────────────
 
 const TABS: { id: TabId; label: string; shortLabel: string; Icon: React.ComponentType<{ size?: number; color?: string }> }[] = [
-  { id: 'Menu1',     label: 'Menu 1',     shortLabel: 'Menu 1', Icon: BarChart3   },
-  { id: 'Menu2',     label: 'Menu 2',       shortLabel: 'Menu 2',   Icon: BarChart3   },
-  { id: 'Menu3',     label: 'Menu 3',       shortLabel: 'Menu 3',   Icon: BarChart3   },
-  { id: 'Menu4',     label: 'Menu 4',       shortLabel: 'Menu 4',   Icon: BarChart3   },
+  { id: 'Actual',    label: 'Actual',     shortLabel: 'Actual', Icon: FileText    },
+  // { id: 'Menu2',     label: 'Menu 2',       shortLabel: 'Menu 2',   Icon: BarChart3   },
+  // { id: 'Menu3',     label: 'Menu 3',       shortLabel: 'Menu 3',   Icon: BarChart3   },
+  // { id: 'Menu4',     label: 'Menu 4',       shortLabel: 'Menu 4',   Icon: BarChart3   },
 ];
 
 // ─── Theme tokens ─────────────────────────────────────────────────────────────
 
-const tk = {
-  dark: {
-    pagebg: '#07090e', sidebarbg: '#0b0d13', headerbg: 'rgba(11,13,19,0.96)',
-    cardbg: '#0e1118', bottombarbg: 'rgba(11,13,19,0.97)',
-    border: 'rgba(255,255,255,0.055)', borderCard: 'rgba(255,255,255,0.075)',
-    borderInput: 'rgba(255,255,255,0.09)',
-    text: 'rgba(255,255,255,0.92)', textSub: 'rgba(255,255,255,0.52)',
-    textMuted: 'rgba(255,255,255,0.28)', textFaint: 'rgba(255,255,255,0.13)',
-    textNav: 'rgba(255,255,255,0.36)',
-    navActiveBg: 'rgba(28,151,6,0.11)', navActiveText: '#4ade80', navActiveDot: '#1c9706',
-    inputBg: 'rgba(255,255,255,0.035)',
-    toggleBg: 'rgba(255,255,255,0.055)', toggleBorder: 'rgba(255,255,255,0.09)',
-    optionBg: '#0b0d13', scrollbar: 'rgba(255,255,255,0.08)',
-    red: { bg: 'rgba(239,68,68,0.08)', text: '#fca5a5', border: 'rgba(239,68,68,0.18)' },
-  },
-  light: {
-    pagebg: '#eef1f7', sidebarbg: '#ffffff', headerbg: 'rgba(255,255,255,0.96)',
-    cardbg: '#ffffff', bottombarbg: 'rgba(255,255,255,0.97)',
-    border: 'rgba(0,0,0,0.065)', borderCard: 'rgba(0,0,0,0.08)',
-    borderInput: 'rgba(0,0,0,0.1)',
-    text: '#0f172a', textSub: '#475569', textMuted: '#94a3b8',
-    textFaint: '#cbd5e1', textNav: '#64748b',
-    navActiveBg: 'rgba(28,151,6,0.07)', navActiveText: '#15803d', navActiveDot: '#1c9706',
-    inputBg: 'rgba(0,0,0,0.03)',
-    toggleBg: '#f1f5f9', toggleBorder: 'rgba(0,0,0,0.09)',
-    optionBg: '#ffffff', scrollbar: 'rgba(0,0,0,0.12)',
-    red: { bg: '#fef2f2', text: '#b91c1c', border: '#fecaca' },
-  },
-} as const;
+// const tk = {
+//   dark: {
+//     pagebg: '#07090e', sidebarbg: '#0b0d13', headerbg: 'rgba(11,13,19,0.96)',
+//     cardbg: '#0e1118', bottombarbg: 'rgba(11,13,19,0.97)',
+//     border: 'rgba(255,255,255,0.055)', borderCard: 'rgba(255,255,255,0.075)',
+//     borderInput: 'rgba(255,255,255,0.09)',
+//     text: 'rgba(255,255,255,0.92)', textSub: 'rgba(255,255,255,0.52)',
+//     textMuted: 'rgba(255,255,255,0.28)', textFaint: 'rgba(255,255,255,0.13)',
+//     textNav: 'rgba(255,255,255,0.36)',
+//     navActiveBg: 'rgba(28,151,6,0.11)', navActiveText: '#4ade80', navActiveDot: '#1c9706',
+//     inputBg: 'rgba(255,255,255,0.035)',
+//     toggleBg: 'rgba(255,255,255,0.055)', toggleBorder: 'rgba(255,255,255,0.09)',
+//     optionBg: '#0b0d13', scrollbar: 'rgba(255,255,255,0.08)',
+//     red: { bg: 'rgba(239,68,68,0.08)', text: '#fca5a5', border: 'rgba(239,68,68,0.18)' },
+//   },
+//   light: {
+//     pagebg: '#eef1f7', sidebarbg: '#ffffff', headerbg: 'rgba(255,255,255,0.96)',
+//     cardbg: '#ffffff', bottombarbg: 'rgba(255,255,255,0.97)',
+//     border: 'rgba(0,0,0,0.065)', borderCard: 'rgba(0,0,0,0.08)',
+//     borderInput: 'rgba(0,0,0,0.1)',
+//     text: '#0f172a', textSub: '#475569', textMuted: '#94a3b8',
+//     textFaint: '#cbd5e1', textNav: '#64748b',
+//     navActiveBg: 'rgba(28,151,6,0.07)', navActiveText: '#15803d', navActiveDot: '#1c9706',
+//     inputBg: 'rgba(0,0,0,0.03)',
+//     toggleBg: '#f1f5f9', toggleBorder: 'rgba(0,0,0,0.09)',
+//     optionBg: '#ffffff', scrollbar: 'rgba(0,0,0,0.12)',
+//     red: { bg: '#fef2f2', text: '#b91c1c', border: '#fecaca' },
+//   },
+// } as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -288,7 +290,7 @@ function TabContent({ tab, theme }: { tab: TabId; theme: Theme }) {
 
 function DashboardInner() {
   const [theme,    setThemeState] = useState<Theme>('light');
-  const [tab,      setTab]        = useState<TabId>('Menu1');
+  const [tab,      setTab]        = useState<TabId>('Actual');
   const [collapsed, setCollapsed] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
   const { isMobile, isTablet } = useBreakpoint();
@@ -322,7 +324,7 @@ function DashboardInner() {
           {/* {tab === 'sales'        && <SalesTab        theme={theme} />} */}
           {/* {tab === 'distribution' && <DistributionTab theme={theme} />} */}
           {/* {tab === 'stores'       && <StoresTab       theme={theme} />} */}
-          <TabContent tab={tab} theme={theme}/>
+          {tab === 'Actual' && <Actual theme={theme} />}
         </main>
       </div>
     </div>

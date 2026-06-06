@@ -420,7 +420,7 @@ function PlaceholderTab({ id, theme }: { id: TabId; theme: Theme }) {
       </div>
       <div style={{ textAlign: 'center' }}>
         <div style={{ fontSize: 15, fontWeight: 700, color: t.text, marginBottom: 4 }}>{item.label}</div>
-        <div style={{ fontSize: 12, color: t.textMuted, fontFamily: FONT_MONO }}>ganti dengan komponen aktual</div>
+        <div style={{ fontSize: 12, color: t.textMuted, fontFamily: FONT_MONO }}>masih belom dibuat, ntar ditambahin tapi gatau apa</div>
       </div>
     </div>
   );
