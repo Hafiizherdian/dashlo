@@ -304,15 +304,17 @@ function DashboardInner() {
 
   useEffect(() => { if (isTablet) setCollapsed(true); }, [isTablet]);
 
-  if (isMobile) return (
-    <div style={{ width: '100%', background: t.pagebg, height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-      <MobileHeader theme={theme} setTheme={setTheme}/>
-      <main ref={mainRef} style={{ flex: 1, minHeight: 0, overflow: 'auto', paddingBottom: 56 }}>
-        <TabContent tab={tab} theme={theme}/>
-      </main>
-      <MobileBottomNav activeTab={tab} setActiveTab={setTab} theme={theme}/>
-    </div>
-  );
+  // SESUDAH
+if (isMobile) return (
+  <div style={{ width: '100%', background: t.pagebg, height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <MobileHeader theme={theme} setTheme={setTheme}/>
+    <main ref={mainRef} style={{ flex: 1, minHeight: 0, overflow: 'auto', paddingBottom: 56 }}>
+      {tab === 'Actual' && <Actual theme={theme} />}
+      {/* tambah tab lain di sini jika ada */}
+    </main>
+    <MobileBottomNav activeTab={tab} setActiveTab={setTab} theme={theme}/>
+  </div>
+);
 
   return (
     <div style={{ width: '100%', background: t.pagebg, height: '100vh', display: 'flex', position: 'relative', overflow: 'hidden' }}>
