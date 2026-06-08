@@ -11,7 +11,7 @@ export const tk = {
     border: 'rgba(255,255,255,0.055)',
     borderCard: 'rgba(255,255,255,0.075)',
     borderInput: 'rgba(255,255,255,0.09)',
-    inputbg: 'rgba(255,255,255,0.035)',   // alias inputBg → inputbg (konsisten)
+    inputbg: 'rgba(255,255,255,0.035)',
     inputBg: 'rgba(255,255,255,0.035)',
     dropzoneActive: 'rgba(99,102,241,0.08)',
     text: 'rgba(255,255,255,0.92)',
@@ -19,8 +19,9 @@ export const tk = {
     textMuted: 'rgba(255,255,255,0.28)',
     textFaint: 'rgba(255,255,255,0.13)',
     textNav: 'rgba(255,255,255,0.36)',
-    tableHead: 'rgba(255,255,255,0.02)',
-    tableAlt: 'rgba(255,255,255,0.015)',
+    // SOLID opaque — wajib untuk elemen position:sticky agar tidak tembus konten di bawahnya
+    tableHead: '#111318',          // was: rgba(255,255,255,0.02)
+    tableAlt:  '#0f1117',          // was: rgba(255,255,255,0.015)
     navActiveBg: 'rgba(28,151,6,0.11)',
     navActiveText: '#4ade80',
     navActiveDot: '#1c9706',
@@ -37,10 +38,10 @@ export const tk = {
     red:    { bg: 'rgba(239,68,68,0.08)',   text: '#fca5a5', border: 'rgba(239,68,68,0.18)'  },
     yellow: { bg: 'rgba(245,158,11,0.1)',   text: '#fcd34d', border: 'rgba(245,158,11,0.28)' },
     gray:   { bg: 'rgba(255,255,255,0.05)', text: 'rgba(255,255,255,0.42)', border: 'rgba(255,255,255,0.08)' },
-    purple: { bg: 'rgba(168,85,247,0.1)',  text: '#d8b4fe', border: 'rgba(168,85,247,0.25)' },
-    orange: { bg: 'rgba(245,158,11,0.1)',  text: '#fcd34d', border: 'rgba(245,158,11,0.25)' },
-    teal:   { bg: 'rgba(14,165,233,0.1)',  text: '#99f6e4', border: 'rgba(14,165,233,0.25)' },
-    pink:   { bg: 'rgba(236,72,153,0.1)',  text: '#f9a8d4', border: 'rgba(236,72,153,0.25)' },
+    purple: { bg: 'rgba(168,85,247,0.1)',   text: '#d8b4fe', border: 'rgba(168,85,247,0.25)' },
+    orange: { bg: 'rgba(245,158,11,0.1)',   text: '#fcd34d', border: 'rgba(245,158,11,0.25)' },
+    teal:   { bg: 'rgba(14,165,233,0.1)',   text: '#99f6e4', border: 'rgba(14,165,233,0.25)' },
+    pink:   { bg: 'rgba(236,72,153,0.1)',   text: '#f9a8d4', border: 'rgba(236,72,153,0.25)' },
     btnDisabled: { bg: 'rgba(255,255,255,0.06)', text: 'rgba(255,255,255,0.2)' },
     stat1: { accent: '#6366f1', iconBg: 'rgba(99,102,241,0.15)',  glow: 'rgba(99,102,241,0.2)'  },
     stat2: { accent: '#10b981', iconBg: 'rgba(16,185,129,0.15)', glow: 'rgba(16,185,129,0.2)'  },
@@ -57,7 +58,7 @@ export const tk = {
     border: 'rgba(0,0,0,0.065)',
     borderCard: 'rgba(0,0,0,0.08)',
     borderInput: 'rgba(0,0,0,0.1)',
-    inputbg: 'rgba(0,0,0,0.03)',          // alias
+    inputbg: 'rgba(0,0,0,0.03)',
     inputBg: 'rgba(0,0,0,0.03)',
     dropzoneActive: 'rgba(99,102,241,0.05)',
     text: '#0f172a',
@@ -65,8 +66,9 @@ export const tk = {
     textMuted: '#94a3b8',
     textFaint: '#cbd5e1',
     textNav: '#64748b',
-    tableHead: '#f8fafc',
-    tableAlt: 'rgba(0,0,0,0.012)',
+    // SOLID opaque — sudah solid, tableAlt diperbaiki dari rgba ke solid
+    tableHead: '#f8fafc',          // sudah solid, tidak berubah
+    tableAlt:  '#f1f5f9',          // was: rgba(0,0,0,0.012)
     navActiveBg: 'rgba(28,151,6,0.07)',
     navActiveText: '#15803d',
     navActiveDot: '#1c9706',
