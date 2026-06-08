@@ -565,7 +565,7 @@ export default function Actual({ theme }: Props) {
                     }}
                     style={{
                       gridColumn:   '1 / -1',
-                      background:   'transparent',
+                      background:   t.red?.bg ?? 'rgba(239,68,68,0.1)',
                       border:       `1px solid ${C.borderInput}`,
                       borderRadius:  6,
                       color:        C.textMuted,
@@ -660,7 +660,7 @@ export default function Actual({ theme }: Props) {
                         WebkitTapHighlightColor: 'transparent',
                       }}
                     >
-                      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 5 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <span style={{
                           fontSize:   12,
                           fontWeight: 600,
@@ -670,16 +670,18 @@ export default function Actual({ theme }: Props) {
                         }}>
                           {area.area_name}
                         </span>
-                        {area.area_name !== area.city_name && (
-                          <span style={{
-                            fontSize:   10,
-                            color:      C.textMuted,
-                            fontFamily: FONT_MONO,
-                          }}>
-                            {area.city_name}
-                          </span>
-                        )}
-                        <span style={agentBadgeStyle()}>{area.agent_type}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          {area.area_name !== area.city_name && (
+                            <span style={{
+                              fontSize:   10,
+                              color:      C.textMuted,
+                              fontFamily: FONT_MONO,
+                            }}>
+                              {area.city_name}
+                            </span>
+                          )}
+                          <span style={agentBadgeStyle()}>{area.agent_type}</span>
+                        </div>
                       </div>
 
                       {/* Chevron */}
