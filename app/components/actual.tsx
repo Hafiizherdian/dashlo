@@ -729,6 +729,10 @@ export default function Actual({ theme }: Props) {
                                 letterSpacing: '0.06em',
                                 textTransform: 'uppercase',
                                 minWidth:      70,
+                                position:      'sticky',
+                                left:          0,
+                                zIndex:        3,
+                                background:    C.bgSubtle,
                               }}>
                                 Harga
                               </th>
@@ -765,8 +769,11 @@ export default function Actual({ theme }: Props) {
                                     whiteSpace:    'nowrap',
                                     borderBottom:  `1px solid ${C.border}`,
                                     borderRight:   `1px solid ${C.borderCard}`,
-                                    background:    rowBg,
+                                    background:    C.bgSubtle2,
                                     fontWeight:    500,
+                                    position:      'sticky',
+                                    left:          0,
+                                    zIndex:        2,
                                   }}>
                                     {label}
                                   </td>
