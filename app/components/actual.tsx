@@ -495,7 +495,7 @@ export default function Actual({ theme }: Props) {
                 display:       'flex',
                 alignItems:    'center',
                 gap:           5,
-                background:    filterOpen ? C.accentBg : 'transparent',
+                background:    filterOpen ? C.accentBg : 'C.accentBg + 20%',
                 border:        `1px solid ${filterOpen ? C.accentBorder : C.borderInput}`,
                 borderRadius:  6,
                 color:         filterOpen ? C.accentText : C.textMuted,
@@ -536,7 +536,7 @@ export default function Actual({ theme }: Props) {
                     <span style={{
                       fontSize:      9,
                       fontFamily:    FONT_MONO,
-                      color:         C.textFaint,
+                      color:         C.textSub,
                       letterSpacing: '0.06em',
                       textTransform: 'uppercase',
                     }}>
@@ -764,7 +764,7 @@ export default function Actual({ theme }: Props) {
                                   <td style={{
                                     padding:       '5px 10px',
                                     fontSize:      10,
-                                    color:         C.textMuted,
+                                    color:         C.textSub,
                                     letterSpacing: '0.04em',
                                     whiteSpace:    'nowrap',
                                     borderBottom:  `1px solid ${C.border}`,
