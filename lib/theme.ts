@@ -35,7 +35,7 @@ export const tk = {
     modalOverlay: 'rgba(0,0,0,0.75)',
     blue:   { bg: 'rgba(99,102,241,0.12)',  text: '#a5b4fc', border: 'rgba(99,102,241,0.3)'  },
     green:  { bg: 'rgba(16,185,129,0.1)',   text: '#6ee7b7', border: 'rgba(16,185,129,0.25)' },
-    red:    { bg: 'rgba(239,68,68,0.08)',   text: '#fca5a5', border: 'rgba(239,68,68,0.18)'  },
+    red:    { bg: 'rgba(239, 68, 68, 0.32)',   text: '#fca5a5', border: 'rgba(239,68,68,0.18)'  },
     yellow: { bg: 'rgba(245,158,11,0.1)',   text: '#fcd34d', border: 'rgba(245,158,11,0.28)' },
     gray:   { bg: 'rgba(255,255,255,0.05)', text: 'rgba(255,255,255,0.42)', border: 'rgba(255,255,255,0.08)' },
     purple: { bg: 'rgba(168,85,247,0.1)',   text: '#d8b4fe', border: 'rgba(168,85,247,0.25)' },
